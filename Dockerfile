@@ -96,6 +96,10 @@ RUN chmod -R 644 /etc/cron.d
 
 # Install docker-ce
 RUN curl -fsSL https://get.docker.com | bash -s
+
+# # Enable user to run docker commands
+# RUN usermod -aG docker ${USERNAME}
+
 #RUN install -m 0755 -d /etc/apt/keyrings && \
 #    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg && \
 #    chmod a+r /etc/apt/keyrings/docker.gpg && \
@@ -106,10 +110,10 @@ RUN curl -fsSL https://get.docker.com | bash -s
 #    apt-get update -y && \
 #    apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
 
-RUN curl -sS https://download.docker.com/linux/static/stable/x86_64/docker-23.0.5.tgz -o /tmp/docker.tar.gz; \
-    tar -xzf /tmp/docker.tar.gz -C /tmp/; \
-    cp /tmp/docker/docker* /usr/local/bin; \
-    chmod +x /usr/local/bin/docker*;
+# RUN curl -sS https://download.docker.com/linux/static/stable/x86_64/docker-23.0.5.tgz -o /tmp/docker.tar.gz; \
+#     tar -xzf /tmp/docker.tar.gz -C /tmp/; \
+#     cp /tmp/docker/docker* /usr/local/bin; \
+#     chmod +x /usr/local/bin/docker*;
 
 ## Enable vagrant user to run docker commands
 #RUN groupadd docker && usermod -aG docker ${USERNAME}
