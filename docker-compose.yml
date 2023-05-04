@@ -136,8 +136,8 @@ services:
     restart: unless-stopped
     environment:
       - CHOKIDAR_USEPOLLING=true
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # volumes:
+    #   - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - "${WORKSPACE_SSH_PORT}:22"
 #      - "${WORKSPACE_BROWSERSYNC_HOST_PORT}:3000"
