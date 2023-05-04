@@ -1,5 +1,11 @@
 # My_Workspace
 
+## Setup
+```shell
+docker swarm init
+docker network create -d overlay --attachable shared-proxy
+```
+
 ## Reference
 - https://github.com/becagis/BecaGIS_Workspace
 - https://github.com/laravel/settler/blob/master/scripts/amd64.sh
