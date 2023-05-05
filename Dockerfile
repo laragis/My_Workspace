@@ -28,7 +28,7 @@ RUN add-apt-repository -y ppa:ubuntugis/ppa && \
     apt-get update -y
 
 RUN apt-get install -y \
-        apt-utils make cmake dos2unix gcc gettext geoip-bin cron \
+        apt-utils make cmake dos2unix gcc gettext geoip-bin \
         curl wget telnet net-tools iputils-ping \
         git nano vim \
         duf htop ncdu ack-grep exa \
@@ -79,6 +79,16 @@ ARG TZ=UTC
 ENV TZ ${TZ}
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+###########################################################################
+# Git
+###########################################################################
+
+ARG INSTALL_GIT=true
+
+RUN if [ ${INSTALL_GIT} = true ]; then \
+    apt-get install -y git \
+;fi
 
 ###########################################################################
 # Crontab

@@ -141,9 +141,12 @@ services:
     tty: true
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - GIT_USERNAME=${GIT_USERNAME}
+      - GIT_EMAIL=${GIT_EMAIL}
     volumes:
 #      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./supervisord.d:/etc/supervisord.d
+      - ./start-container:/usr/local/bin/start-container
     ports:
       - "${WORKSPACE_SSH_PORT}:22"
       - "${WORKSPACE_SUPERVISOR_PORT}:9001"

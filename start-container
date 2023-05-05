@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+# Git
+[ ! -z "${GIT_USERNAME}" ] && git config --global user.name $GIT_USERNAME
+[ ! -z "${GIT_EMAIL}" ] && git config --global user.email $GIT_EMAIL
+git config --global credential.helper store
+
 if [ $# -gt 0 ]; then
     exec gosu $WWWUSER "$@"
 else
