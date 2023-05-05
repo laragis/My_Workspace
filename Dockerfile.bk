@@ -84,15 +84,11 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # Crontab
 ###########################################################################
 
-ARG INSTALL_CRON=true
+USER root
 
-COPY ./crontab /tmp/cron.d
+COPY ./crontab /etc/cron.d
 
-RUN if [ ${INSTALL_CRON} = true ]; then \
-    apt-get install -y cron && \
-    cp -rf /tmp/cron.d /etc/cron.d && \
-    chmod -R 644 /etc/cron.d \
-;fi
+RUN chmod -R 644 /etc/cron.d
 
 ###########################################################################
 # Docker:
@@ -156,14 +152,11 @@ RUN if [ ${INSTALL_SUPERVISOR} = true ]; then \
     apt-get install -y supervisor && \
     mkdir -p /etc/supervisord.d && \
     cat /tmp/supervisord.conf >> /etc/supervisord.conf && \
-    if [ ${INSTALL_CRON} = true ]; then \
-      cat /tmp/supervisord.d/cron.ini >> /etc/supervisord.d/cron.ini \
+    if [ ${INSTALL_DOCKER} = true ]; then \
+      cat /tmp/supervisord.d/docker.ini >> /etc/supervisord.d/docker.ini \
     ;fi && \
     if [ ${INSTALL_SSH} = true ]; then \
       cat /tmp/supervisord.d/ssh.ini >> /etc/supervisord.d/ssh.ini \
-    ;fi && \
-    if [ ${INSTALL_DOCKER} = true ]; then \
-      cat /tmp/supervisord.d/docker.ini >> /etc/supervisord.d/docker.ini \
     ;fi \
 ;fi
 
