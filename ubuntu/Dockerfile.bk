@@ -1,0 +1,31 @@
+###########################################################################
+# NeoVIM:
+###########################################################################
+
+ARG INSTALL_NEVIM=true
+
+#RUN if [ ${INSTALL_NEVIM} = true ]; then \
+#    add-apt-repository -y ppa:neovim-ppa/stable && \
+#    apt-get update -y && \
+#    apt-get install -y neovim \
+#;fi
+#
+## Copy Neovim configuration files.
+#COPY ./init.vim /tmp/init.vim
+#
+## Create directory for Neovim configuration files.
+#RUN curl -fLo /home/${USERNAME}/.local/share/nvim/site/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim && \
+#    # Create directory for Neovim configuration files.
+#    mkdir -p /home/${USERNAME}/.config/nvim
+##    # Copy Neovim configuration files.
+##    cp /tmp/init.vim /home/${USERNAME}/.config/nvim && \
+##    # Install Neovim extensions.
+##    nvim --headless +PlugInstall +qall
+
+#--------------------------------------------------------------------------
+# Final Touch
+#--------------------------------------------------------------------------
+#
+
+#RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.config && \
+#    chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.local

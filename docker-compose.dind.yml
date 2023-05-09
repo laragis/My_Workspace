@@ -1,0 +1,28 @@
+volumes:
+  docker-in-docker:
+    driver: ${VOLUMES_DRIVER}
+
+services:
+  ### Workspace Utilities ##################################
+  workspace:
+    environment:
+      - DOCKER_HOST=tcp://docker-in-docker:2376
+      - DOCKER_TLS_VERIFY=1
+      - DOCKER_TLS_CERTDIR=/certs
+      - DOCKER_CERT_PATH=/certs/client
+    volumes:
+      - docker-in-docker:/certs/client
+
+  ### Docker-in-Docker ################################################
+  docker-in-docker:
+    image: docker:dind
+    environment:
+      DOCKER_TLS_SAN: DNS:docker-in-docker
+    privileged: true
+    volumes:
+      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}
+      - docker-in-docker:/certs/client
+    expose:
+      - 2375
+    networks:
+      - default

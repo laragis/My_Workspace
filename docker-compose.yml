@@ -3,21 +3,41 @@ volumes:
     driver: ${VOLUMES_DRIVER}
 
 networks:
+
   default:
   shared-proxy:
     driver: overlay
     external: true
 
 services:
+  neovim:
+    build:
+      context: .
+      dockerfile: Dockerfile.neovim
+    tty: true
+
+  ### Ubuntu ##################################
+  ubuntu:
+    image: ttungbmt/ubuntu
+    build:
+      context: ./ubuntu
+      args:
+        - UBUNTU_VERSION=${UBUNTU_VERSION}
+        - TZ=${UBUNTU_TIMEZONE}
+        - INSTALL_BAT=${UBUNTU_INSTALL_BAT}
+        - INSTALL_FD=${UBUNTU_INSTALL_FD}
+    tty: true
+
   ### Workspace Utilities ##################################
   workspace:
     image: ttungbmt/workspace
     build:
-      context: .
+      context: ./workspace
       args:
         - UBUNTU_VERSION=${WORKSPACE_UBUNTU_VERSION}
         - SHELL_OH_MY_ZSH=${SHELL_OH_MY_ZSH}
         - SHELL_OH_MY_ZSH_AUTOSUGESTIONS=${SHELL_OH_MY_ZSH_AUTOSUGESTIONS}
+        - SHELL_OH_MY_ZSH_SYNTAX_HIGHLIGHTING=${SHELL_OH_MY_ZSH_SYNTAX_HIGHLIGHTING}
         - SHELL_OH_MY_ZSH_ALIASES=${SHELL_OH_MY_ZSH_ALIASES}
 #        - LARADOCK_PHP_VERSION=${PHP_VERSION}
 #        - LARADOCK_PHALCON_VERSION=${PHALCON_VERSION}
@@ -136,15 +156,16 @@ services:
         - http_proxy
         - https_proxy
         - no_proxy
-#    restart: unless-stopped
+    restart: unless-stopped
     privileged: true
     tty: true
     environment:
+      - DOCKER_HOST=tcp://${DOCKER_HOST_IP}:${DOCKER_HOST_PORT}
+      - DOCKER_TLS_VERIFY=
       - CHOKIDAR_USEPOLLING=true
       - GIT_USERNAME=${GIT_USERNAME}
       - GIT_EMAIL=${GIT_EMAIL}
     volumes:
-#      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./supervisord.d:/etc/supervisord.d
       - ./start-container:/usr/local/bin/start-container
     ports:
@@ -172,28 +193,13 @@ services:
       - shared-proxy
       - default
 
-#  ### whoami ##############################################
-#  whoami:
-#    image: traefik/whoami
-#    expose:
-#      - "80"
-#    environment:
-#      - VIRTUAL_HOST=whoami.local
-#      - VIRTUAL_PORT=80
-#    networks:
-#      - default
-#
-#  ### Docker-in-Docker ################################################
-#  docker-in-docker:
-#    image: docker:23.0.5-dind
-#    environment:
-#      - DOCKER_TLS_SAN=DNS:docker-in-docker
-#    privileged: true
-#    volumes:
-#      - /var/run/docker.sock:/var/run/docker.sock
-##      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}
-##      - docker-in-docker:/certs/client
-#    expose:
-#      - 2375
-#    networks:
-#      - default
+  ### whoami ##############################################
+  whoami:
+    image: traefik/whoami
+    expose:
+      - "80"
+    environment:
+      - VIRTUAL_HOST=whoami.local
+      - VIRTUAL_PORT=80
+    networks:
+      - default

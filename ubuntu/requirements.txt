@@ -1,0 +1,2 @@
+lastversion # https://github.com/dvershinin/lastversion
+virtualenv # https://github.com/pypa/virtualenv
