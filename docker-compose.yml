@@ -9,30 +9,12 @@ networks:
     external: true
 
 services:
-  ### Ubuntu ##################################
-  ubuntu:
-    image: ttungbmt/ubuntu
-    build:
-      context: ./ubuntu
-      args:
-        - UBUNTU_VERSION=${UBUNTU_VERSION}
-        - TZ=${UBUNTU_TIMEZONE}
-        - INSTALL_BAT=${UBUNTU_INSTALL_BAT}
-        - INSTALL_FD=${UBUNTU_INSTALL_FD}
-    tty: true
-
   ### Workspace Utilities ##################################
   workspace:
     image: ttungbmt/workspace
-    build:
-      context: ./workspace
-      args:
-        - UBUNTU_VERSION=${WORKSPACE_UBUNTU_VERSION}
-        - http_proxy
-        - https_proxy
-        - no_proxy
     restart: unless-stopped
     privileged: true
+    working_dir: ${APP_CODE_PATH_CONTAINER}
     tty: true
     environment:
       - DOCKER_HOST=tcp://${DOCKER_HOST_IP}:${DOCKER_HOST_PORT}
@@ -42,9 +24,11 @@ services:
       - GIT_EMAIL=${GIT_EMAIL}
     volumes:
       - userprofile:/home/ubuntu
+      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
     ports:
       - "${WORKSPACE_SSH_PORT}:22"
       - "${WORKSPACE_SUPERVISOR_PORT}:9001"
+      - 8000
     networks:
       - shared-proxy
       - default
@@ -59,15 +43,4 @@ services:
       - /var/run/docker.sock:/tmp/docker.sock:ro
     networks:
       - shared-proxy
-      - default
-
-  ### whoami ##############################################
-  whoami:
-    image: traefik/whoami
-    expose:
-      - "80"
-    environment:
-      - VIRTUAL_HOST=whoami.local
-      - VIRTUAL_PORT=80
-    networks:
       - default

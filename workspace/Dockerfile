@@ -263,6 +263,12 @@ RUN if [ ${INSTALL_NODE} = true ]; then \
         && echo $(grep -o '^[^#]*' /tmp/node_packages.txt | paste -sd ' ') | xargs npm install -g \
 ;fi
 
+RUN if [ ${INSTALL_NODE} = true ] && [ ${SHELL_OH_MY_ZSH} = true ]; then \
+    echo "" >> ~/.zshrc && \
+    echo "export NVM_DIR=\"/home/${USERNAME}/.nvm\"" >> ~/.zshrc && \
+    echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm' >> ~/.zshrc \
+;fi
+
 # Add NVM binaries to root's .bashrc
 USER root
 
