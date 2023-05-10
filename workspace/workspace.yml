@@ -1,0 +1,7 @@
+features:
+  - ohmyzsh: true
+
+versions:
+  - node:
+    - lts/*
+    - node

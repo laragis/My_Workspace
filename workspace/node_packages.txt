@@ -1,0 +1,15 @@
+# Required
+yarn
+pnpm
+
+# Cli
+gulp
+bower
+@vue/cli
+@angular/cli
+
+# Utilities
+cross-env
+rimraf
+nodemon
+pm2

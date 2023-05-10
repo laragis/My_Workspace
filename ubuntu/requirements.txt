@@ -1,2 +1,6 @@
 lastversion # https://github.com/dvershinin/lastversion
 virtualenv # https://github.com/pypa/virtualenv
+ipython # https://github.com/ipython/ipython
+invoke # https://github.com/pyinvoke/invoke
+numpy # https://github.com/numpy/numpy
+geopandas # https://github.com/geopandas/geopandas
