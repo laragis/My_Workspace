@@ -22,6 +22,7 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - GIT_USERNAME=${GIT_USERNAME}
       - GIT_EMAIL=${GIT_EMAIL}
+      - NODE_OPTIONS=--openssl-legacy-provider
     volumes:
       - userprofile:/home/ubuntu
       - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
@@ -29,18 +30,26 @@ services:
       - "${WORKSPACE_SSH_PORT}:22"
       - "${WORKSPACE_SUPERVISOR_PORT}:9001"
       - 8000
+      - 3000
     networks:
       - shared-proxy
       - default
 
-  ### nginx-proxy ##############################################
-  nginx-proxy:
-    image: nginxproxy/nginx-proxy
+  ### Traefik ##############################################
+  reverse-proxy:
+    # The official v2 Traefik docker image
+    image: traefik:v2.10
     restart: unless-stopped
+    # Enables the web UI and tells Traefik to listen to docker
+    command: --api.insecure=true --providers.docker
     ports:
+      # The HTTP port
       - "80:80"
+      # The Web UI (enabled by --api.insecure=true)
+      - "8080:8080"
     volumes:
-      - /var/run/docker.sock:/tmp/docker.sock:ro
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - shared-proxy
       - default

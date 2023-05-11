@@ -13,3 +13,4 @@ cross-env
 rimraf
 nodemon
 pm2
+serve
