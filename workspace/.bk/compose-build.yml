@@ -3,7 +3,7 @@ services:
   ubuntu:
     image: ttungbmt/ubuntu
     build:
-      context: ./ubuntu
+      context: ../ubuntu
       args:
         - UBUNTU_VERSION=${UBUNTU_VERSION}
         - TZ=${UBUNTU_TIMEZONE}

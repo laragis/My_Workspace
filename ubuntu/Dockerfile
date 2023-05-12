@@ -8,8 +8,6 @@ ENV DEBIAN_FRONTEND noninteractive
 ARG USERNAME=ubuntu
 ENV USER ${USERNAME}
 
-
-
 # Start as root
 USER root
 
@@ -24,8 +22,6 @@ RUN apt-get install -y sudo lsb-release gnupg ca-certificates apt-transport-http
 
 # Install Some PPAs
 RUN add-apt-repository -y ppa:ubuntugis/ppa && \
-    # Python
-    add-apt-repository -y ppa:deadsnakes/ppa && \
     # Git
     add-apt-repository -y ppa:git-core/ppa && \
     ## Update Package Lists
@@ -150,6 +146,24 @@ RUN if [ ${INSTALL_LAZYGIT} = true ]; then \
     cd /tmp && tar xf lazygit.tar.gz lazygit && \
     sudo install lazygit /usr/local/bin \
 ;fi
+
+###########################################################################
+# NeoVIM:
+###########################################################################
+ARG INSTALL_NEOVIM=true
+ARG NEOVIM_VERSION="$(lastversion neovim/neovim)"
+ARG NEOVIM_CONFIG="https://github.com/NvChad/NvChad"
+
+RUN if [ ${INSTALL_NEOVIM} = true ]; then \
+    NEOVIM_VERSION=$(eval echo $NEOVIM_VERSION) && \
+    curl -Lo /tmp/nvim-linux64.tar.gz "https://github.com/neovim/neovim/releases/download/v${NEOVIM_VERSION}/nvim-linux64.tar.gz" && \
+    tar xzvf /tmp/nvim-linux64.tar.gz -C /tmp && \
+    mv /tmp/nvim-linux64 /opt/nvim && \
+    ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim && \
+    apt-get install -y ripgrep && \
+    runuser -l ${USERNAME} -c "git clone ${NEOVIM_CONFIG} ~/.config/nvim --depth 1" \
+;fi
+
 
 #
 #--------------------------------------------------------------------------

@@ -93,9 +93,140 @@ sudo apt install wget fontconfig \
 && cd ~/.local/share/fonts && unzip Meslo.zip && rm *Windows* && rm Meslo.zip && fc-cache -fv
 ```
 
+### Run another user
+
+```shell
+su vagrant <<'EOF'
+  /usr/local/bin/composer global require "laravel/envoy=^2.0"
+  /usr/local/bin/composer global require "laravel/installer=^4.2"
+  /usr/local/bin/composer global config --no-plugins allow-plugins.slince/composer-registry-manager true
+  /usr/local/bin/composer global require "slince/composer-registry-manager=^2.0"
+EOF
+
+runuser -l ubuntu -c 'ulimit -SHa'
+
+```
+
 ## Best IDE
 - NvChad
 - AstroNvim
 - LunarVim
 - CosmicNvim
 - VapourNvim
+
+https://computingforgeeks.com/how-to-share-your-linux-terminal-in-web-browser-with-gotty/
+
+# Included Software
+- Ubuntu 20.04
+- Git
+- PHP 8.2
+- PHP 8.1
+- PHP 8.0
+- PHP 7.4
+- PHP 7.3
+- PHP 7.2
+- PHP 7.1
+- PHP 7.0
+- PHP 5.6
+- ngrok
+- Composer
+- Nginx
+- MySQL 8.0
+- lmm
+- Sqlite3
+- PostgreSQL 15
+- Docker
+- Node (With Yarn, Bower, Grunt, and Gulp)
+- Redis
+- Memcached
+- Beanstalkd
+- Mailhog
+- avahi
+- Xdebug
+- XHProf / Tideways / XHGui
+- wp-cli
+# Optional Software
+- Apache
+- Blackfire
+- Cassandra
+- Chronograf
+- CouchDB
+- Crystal & Lucky Framework
+- Elasticsearch
+- EventStoreDB
+- Gearman
+- Go
+- Grafana
+- InfluxDB
+- MariaDB
+- Meilisearch
+- MinIO
+- MongoDB
+- Neo4j
+- Oh My Zsh
+- Open Resty
+- PM2
+- Python
+- R
+- RabbitMQ
+- RVM (Ruby Version Manager)
+- Solr
+- TimescaleDB
+- Trader (PHP extension)
+- Webdriver & Laravel Dusk Utilities
+
+ngrok config add-authtoken <token>
+
+NGROK_AUTHTOKEN
+
+```shell
+ssh-keygen -t rsa -b 4096 -C "becagis.vntts@gmail.com" -f ~/.ssh/id_rsa_becagis
+ssh-copy-id -i ~/.ssh/id_rsa_becagis.pub user@host
+```
+
+```shell %USERPROFILE%\.ssh\config
+Host github.com
+  HostName github.com
+  PreferredAuthentications publickey
+  IdentityFile ~/.ssh/id_rsa_github
+
+Host becagis
+  HostName 180.148.1.190
+  User vntts
+  Port 2200
+  PreferredAuthentications publickey
+  IdentityFile ~/.ssh/id_rsa_becagis
+
+Host mywaytravel
+  HostName 194.233.101.85
+  User discover
+  Port 22
+  PreferredAuthentications publickey
+  IdentityFile ~/.ssh/id_rsa_mywaytravel
+  
+Host ws
+  HostName 127.0.0.1
+  User ubuntu
+  Port 2200
+  PreferredAuthentications publickey
+  IdentityFile ~/.ssh/insecure_id_rsa
+```
+
+```shell
+# Remove node modules
+find . -name 'node_modules' -type d -prune -print -exec rm -rf '{}' \;
+
+# Windows:
+FOR /d /r . %d in (node_modules) DO @IF EXIST "%d" rm -rf "%d"
+
+# Zip excludes folders
+zip -r output.zip . -x '*.git*' -x '*node_modules*'
+
+# Unzip
+unzip filename.zip -d /path/to/directory
+unzip -P PasswOrd filename.zip
+
+unzip '*.zip'
+unzip \*.zip
+for z in *.zip; do unzip "$z"; done
+```

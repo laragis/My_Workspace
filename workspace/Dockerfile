@@ -1,18 +1,249 @@
-ARG UBUNTU_VERSION=latest
-FROM ttungbmt/ubuntu:${UBUNTU_VERSION}
+#
+#--------------------------------------------------------------------------
+# Image Setup
+#--------------------------------------------------------------------------
+#
 
-LABEL maintainer="Truong Thanh Tung <ttungbmt@gmail.com>"
+ARG UBUNTU_VERSION=jammy-1.0.1
+FROM phusion/baseimage:${UBUNTU_VERSION}
+
+LABEL io.workspace.image.authors="Trương Thanh Tùng <ttungbmt@gmail.com"
+LABEL maintainer="Trương Thanh Tùng <ttungbmt@gmail.com>"
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN locale-gen en_US.UTF-8
 
 # Set Environment Variables
 ENV DEBIAN_FRONTEND noninteractive
-ARG USERNAME=ubuntu
-ENV USER ${USERNAME}
+ENV TERM xterm
+
+ARG USERNAME="ubuntu"
 
 # Start as root
 USER root
 
+###########################################################################
+# Update sýtem
+###########################################################################
+
 # Update Package List
 RUN apt-get update -y
+
+# Update System Packages
+RUN apt-get upgrade -y
+
+# Mandatory Software's Installation
+RUN apt-get install -y \
+      sudo lsb-release \
+      gnupg gosu ca-certificates apt-transport-https software-properties-common build-essential
+
+# Install Some PPAs
+RUN add-apt-repository -y ppa:ubuntugis/ppa && \
+    # Python
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    # Git
+    add-apt-repository -y ppa:git-core/ppa && \
+    ## Update Package Lists
+    apt-get update -y
+
+# Install Some Basic Packages
+RUN apt-get install -y \
+        apt-utils make cmake dos2unix gcc gettext geoip-bin locales \
+        curl wget telnet net-tools iputils-ping tmux rsync tree \
+        git nano vim \
+        duf htop ncdu ack-grep exa \
+        zip unzip libzip-dev
+
+###########################################################################
+# Set Locales
+###########################################################################
+
+ENV LANGUAGE=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV LC_CTYPE=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+RUN locale-gen en_US.UTF-8
+
+###########################################################################
+# Set Timezone
+###########################################################################
+
+ARG TZ=Asia/Ho_Chi_Minh
+ENV TZ ${TZ}
+
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+###########################################################################
+# Laradock non-root user:
+###########################################################################
+
+# Add a non-root user to prevent files being created with root permissions on host machine.
+ARG PUID=1000
+ENV PUID ${PUID}
+ARG PGID=1000
+ENV PGID ${PGID}
+
+RUN groupadd -o -g ${PGID} ${USERNAME} && \
+    useradd -l -u ${PUID} -g ${PGID} -m ${USERNAME} -s /bin/bash && \
+    # Set password
+    echo "root:root" | chpasswd && \
+    echo "${USERNAME}:${USERNAME}" | chpasswd && \
+    # No password input
+    echo "${USERNAME} ALL = NOPASSWD: ALL" > /etc/sudoers.d/${USERNAME} && \
+    chmod 0440 /etc/sudoers.d/${USERNAME}
+
+
+RUN mkdir -p /home/${USERNAME}/.local && \
+    chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.local
+
+#
+#--------------------------------------------------------------------------
+# Fonts
+#--------------------------------------------------------------------------
+#
+
+COPY ./fonts.txt /tmp/fonts.txt
+
+RUN apt-get install -y fontconfig
+
+USER ${USERNAME}
+
+RUN mkdir -p /home/${USERNAME}/.local/share/fonts && \
+    for font in $(cat /tmp/fonts.txt); do \
+      wget -P /home/${USERNAME}/.local/share/fonts $font; \
+    done && \
+    fc-cache -fv
+
+USER root
+
+###########################################################################
+# bat:
+###########################################################################
+
+ARG INSTALL_BAT=true
+
+RUN if [ ${INSTALL_BAT} = true ]; then \
+    apt-get install -y bat && \
+    ln -s /usr/bin/batcat /usr/local/bin/bat \
+;fi
+
+###########################################################################
+# fd:
+###########################################################################
+
+ARG INSTALL_FD=true
+
+RUN if [ ${INSTALL_FD} = true ]; then \
+    apt-get install -y fd-find && \
+    ln -s $(which fdfind) /usr/local/bin/fd \
+;fi
+
+###########################################################################
+# DNS utilities:
+###########################################################################
+
+ARG INSTALL_DNSUTILS=false
+
+RUN if [ ${INSTALL_DNSUTILS} = true ]; then \
+    apt-get update && apt-get install -y dnsutils \
+;fi
+
+###########################################################################
+# GoTTY:
+###########################################################################
+ARG INSTALL_GOTTY=true
+ARG GOTTY_VERSION="$(curl -s \"https://api.github.com/repos/yudai/gotty/releases/latest\" | grep -Po '\"tag_name\": \"v\K[^\"]*')"
+
+RUN if [ ${INSTALL_GOTTY} = true ]; then \
+    VER=$(eval echo $GOTTY_VERSION) && \
+    curl -Lo /tmp/gotty_linux_amd64.tar.gz "https://github.com/yudai/gotty/releases/download/v${VER}/gotty_linux_amd64.tar.gz" && \
+    tar xvf /tmp/gotty_linux_amd64.tar.gz -C /usr/local/bin \
+;fi
+
+###########################################################################
+# TTYD:
+###########################################################################
+
+ARG INSTALL_TTYD=true
+ARG TTYD_VERSION="$(curl -s \"https://api.github.com/repos/tsl0922/ttyd/releases/latest\" | grep -Po '\"tag_name\": \"v\K[^\"]*')"
+
+RUN if [ ${INSTALL_TTYD} = true ]; then \
+    TTYD_VERSION=$(eval echo $TTYD_VERSION) && \
+    curl -LO https://github.com/tsl0922/ttyd/releases/download/${TTYD_VERSION}/ttyd.x86_64 && \
+    mv ttyd.x86_64 /usr/bin/ttyd && \
+    chmod +x /usr/bin/ttyd \
+;fi
+
+###########################################################################
+# lazygit:
+###########################################################################
+
+ARG INSTALL_LAZYGIT=true
+ARG LAZYGIT_VERSION="$(curl -s \"https://api.github.com/repos/jesseduffield/lazygit/releases/latest\" | grep -Po '\"tag_name\": \"v\K[^\"]*')"
+
+RUN if [ ${INSTALL_LAZYGIT} = true ]; then \
+    LAZYGIT_VERSION=$(eval echo $LAZYGIT_VERSION) && \
+    curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
+    cd /tmp && tar xf lazygit.tar.gz lazygit && \
+    sudo install lazygit /usr/local/bin \
+;fi
+
+###########################################################################
+# Oh My ZSH!
+###########################################################################
+
+USER root
+
+ARG SHELL_OH_MY_ZSH=true
+ARG SHELL_OH_MY_ZSH_AUTOCOMPLETE=true
+ARG SHELL_OH_MY_ZSH_AUTOSUGGESTIONS=false
+ARG SHELL_OH_MY_ZSH_SYNTAX_HIGHLIGHTING=true
+ARG SHELL_OH_MY_ZSH_SPACESHIP_PROMPT=true
+ARG SHELL_OH_MY_ZSH_ALIASES=true
+
+RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
+    apt install -y zsh \
+;fi
+
+USER ${USERNAME}
+
+RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --keep-zshrc" && \
+    echo yes | bash -c "$(curl --fail --show-error --silent --location https://raw.githubusercontent.com/zdharma-continuum/zinit/HEAD/scripts/install.sh)" && \
+    echo '\n# ZSH Plugins' >> ~/.zshrc && \
+#    if [ ${SHELL_OH_MY_ZSH_AUTOSUGGESTIONS} = true ]; then \
+#      echo "zinit light zsh-users/zsh-autosuggestions" >> ~/.zshrc \
+#    ;fi && \
+    if [ ${SHELL_OH_MY_ZSH_SYNTAX_HIGHLIGHTING} = true ]; then \
+      echo "zinit light zsh-users/zsh-syntax-highlighting" >> ~/.zshrc \
+    ;fi && \
+    if [ ${SHELL_OH_MY_ZSH_SPACESHIP_PROMPT} = true ]; then \
+      echo "zinit light spaceship-prompt/spaceship-prompt" >> ~/.zshrc \
+    ;fi && \
+    if [ ${SHELL_OH_MY_ZSH_AUTOCOMPLETE} = true ]; then \
+      echo "zinit light marlonrichert/zsh-autocomplete" >> ~/.zshrc \
+    ;fi && \
+    echo '\n# ZSH Snippet' >> ~/.zshrc && \
+    if [ ${SHELL_OH_MY_ZSH_ALIASES} = true ]; then \
+      echo "zinit snippet https://raw.githubusercontent.com/laragis/zsh-snippets/main/bash_aliases.sh" >> ~/.zshrc \
+    ;fi \
+;fi
+
+USER root
+
+###########################################################################
+# Docker:
+###########################################################################
+
+ARG INSTALL_DOCKER=true
+
+RUN if [ ${INSTALL_DOCKER} = true ]; then \
+    curl -fsSL https://get.docker.com | bash -s && \
+    # Enable user to run docker commands
+    usermod -aG docker ${USERNAME} && \
+    # Activate the changes to groups
+    newgrp docker \
+;fi
 
 ###########################################################################
 # Crontab
@@ -27,6 +258,13 @@ RUN if [ ${INSTALL_CRON} = true ]; then \
     cp -rf /tmp/cron.d /etc/cron.d && \
     chmod -R 644 /etc/cron.d \
 ;fi
+
+###########################################################################
+# Certificate Authorities
+###########################################################################
+
+COPY ./ca-certificates/* /usr/local/share/ca-certificates/
+RUN update-ca-certificates
 
 ###########################################################################
 # ssh:
@@ -64,20 +302,6 @@ RUN set -eux; \
     fi
 
 ###########################################################################
-# Docker:
-###########################################################################
-
-ARG INSTALL_DOCKER=true
-
-RUN if [ ${INSTALL_DOCKER} = true ]; then \
-    curl -fsSL https://get.docker.com | bash -s && \
-    # Enable user to run docker commands
-    usermod -aG docker ${USERNAME} && \
-    # Activate the changes to groups
-    newgrp docker \
-;fi
-
-###########################################################################
 # Supervisor
 ###########################################################################
 
@@ -90,15 +314,25 @@ RUN if [ ${INSTALL_SUPERVISOR} = true ]; then \
     apt-get install -y supervisor && \
     mkdir -p /etc/supervisord.d && \
     cat /tmp/supervisord.conf >> /etc/supervisord.conf && \
-    if [ ${INSTALL_CRON} = true ]; then \
-      cat /tmp/supervisord.d/cron.ini >> /etc/supervisord.d/cron.ini \
-    ;fi && \
-    if [ ${INSTALL_SSH} = true ]; then \
-      cat /tmp/supervisord.d/ssh.ini >> /etc/supervisord.d/ssh.ini \
-    ;fi && \
+#    if [ ${INSTALL_CRON} = true ]; then \
+#      cat /tmp/supervisord.d/cron.ini >> /etc/supervisord.d/cron.ini \
+#    ;fi && \
+#    if [ ${INSTALL_SSH} = true ]; then \
+#      cat /tmp/supervisord.d/ssh.ini >> /etc/supervisord.d/ssh.ini \
+#    ;fi && \
     if [ ${INSTALL_DOCKER} = true ]; then \
       cat /tmp/supervisord.d/docker.ini >> /etc/supervisord.d/docker.ini \
     ;fi \
+;fi
+
+###########################################################################
+# GNU Parallel:
+###########################################################################
+
+ARG INSTALL_GNU_PARALLEL=true
+
+RUN if [ ${INSTALL_GNU_PARALLEL} = true ]; then \
+  apt-get -yqq install parallel \
 ;fi
 
 ###########################################################################
@@ -106,8 +340,6 @@ RUN if [ ${INSTALL_SUPERVISOR} = true ]; then \
 ###########################################################################
 
 # The command line interface for WordPress
-
-USER root
 
 ARG INSTALL_WP_CLI=true
 
@@ -117,27 +349,14 @@ RUN if [ ${INSTALL_WP_CLI} = true ]; then \
 ;fi
 
 ###########################################################################
-# DNS utilities:
-###########################################################################
-
-USER root
-
-ARG INSTALL_DNSUTILS=false
-
-RUN if [ ${INSTALL_DNSUTILS} = true ]; then \
-    apt-get update && apt-get install -y dnsutils \
-;fi
-
-###########################################################################
 # Terraform:
 ###########################################################################
 
-USER root
-
-ARG INSTALL_TERRAFORM=false
-ARG TERRAFORM_VERSION=1.4.6
+ARG INSTALL_TERRAFORM=true
+ARG TERRAFORM_VERSION="$(curl -s \"https://api.github.com/repos/hashicorp/terraform/releases/latest\" | grep -Po '\"tag_name\": \"v\K[^\"]*')"
 
 RUN if [ ${INSTALL_TERRAFORM} = true ]; then \
+    TERRAFORM_VERSION=$(eval echo $TERRAFORM_VERSION) && \
     wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
     && unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
     && mv terraform /usr/local/bin \
@@ -150,11 +369,10 @@ RUN if [ ${INSTALL_TERRAFORM} = true ]; then \
 
 ARG INSTALL_ANSIBLE=true
 
-RUN add-apt-repository -y ppa:ansible/ansible && \
-    apt-get update -y && \
-    if [ ${INSTALL_TERRAFORM} = true ]; then \
-      apt-get install -y ansible \
-    ;fi
+RUN if [ ${INSTALL_ANSIBLE} = true ]; then \
+    add-apt-repository -y ppa:ansible/ansible && \
+    apt-get update -y && apt-get install -y ansible \
+;fi
 
 ###########################################################################
 # PYTHON3:
@@ -162,53 +380,105 @@ RUN add-apt-repository -y ppa:ansible/ansible && \
 
 ARG INSTALL_PYTHON3=true
 
+COPY ./python/requirements.txt /tmp/requirements.txt
+
 RUN if [ ${INSTALL_PYTHON3} = true ]; then \
-  add-apt-repository -y ppa:deadsnakes/ppa && \
-  apt-get update -yqq && \
-  apt-get -y install \
-    python3 python3-all-dev python3-dev python3-pip \
-    python3-pip python3-pil python3-lxml python3-pylibmc \
-    python-is-python3 \
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    apt-get update -yqq && \
+    apt-get -y install \
+      python-is-python3 \
+      python3-dev python3-pip \
+      python3-psycopg2 python3-ldap \
+      python3-pil python3-lxml python3-pylibmc && \
+      pip install -r ./tmp/requirements.txt \
 ;fi
 
 ###########################################################################
-# Oh My ZSH!
+# Rust:
 ###########################################################################
 
-USER root
+ARG INSTALL_CARGO=true
 
-ARG SHELL_OH_MY_ZSH=true
-ARG SHELL_OH_MY_ZSH_AUTOSUGGESTIONS=true
-ARG SHELL_OH_MY_ZSH_SYNTAX_HIGHLIGHTING=true
-ARG SHELL_OH_MY_ZSH_SPACESHIP_PROMPT=true
-ARG SHELL_OH_MY_ZSH_ALIASES=true
-
-RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
-    apt install -y zsh \
+RUN if [ ${INSTALL_FD} = true ]; then \
+    apt-get install -y cargo \
 ;fi
 
-USER ${USERNAME}
+###########################################################################
+# Go:
+###########################################################################
 
-RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --keep-zshrc" && \
-    echo yes | bash -c "$(curl --fail --show-error --silent --location https://raw.githubusercontent.com/zdharma-continuum/zinit/HEAD/scripts/install.sh)" && \
-    echo '\n# ZSH Plugins' >> ~/.zshrc && \
-    if [ ${SHELL_OH_MY_ZSH_AUTOSUGGESTIONS} = true ]; then \
-      echo "zinit light zsh-users/zsh-autosuggestions" >> ~/.zshrc \
-    ;fi && \
-    if [ ${SHELL_OH_MY_ZSH_SYNTAX_HIGHLIGHTING} = true ]; then \
-      echo "zinit light zsh-users/zsh-syntax-highlighting" >> ~/.zshrc \
-    ;fi && \
-    if [ ${SHELL_OH_MY_ZSH_SPACESHIP_PROMPT} = true ]; then \
-      echo "zinit light spaceship-prompt/spaceship-prompt" >> ~/.zshrc \
-    ;fi && \
-    echo '\n# ZSH Snippet' >> ~/.zshrc && \
-    if [ ${SHELL_OH_MY_ZSH_ALIASES} = true ]; then \
-      echo "zinit snippet https://raw.githubusercontent.com/laragis/zsh-snippets/main/bash_aliases.sh" >> ~/.zshrc \
-    ;fi \
+ARG INSTALL_GO=true
+ENV GOPATH="/home/${USERNAME}/go"
+
+RUN if [ ${INSTALL_GO} = true ]; then \
+    apt-get install -y golang-go && \
+    echo "export GOPATH=\"$GOPATH\"" >> ~/.bashrc && \
+    echo 'export GOBIN="$GOPATH/bin"' >> ~/.bashrc && \
+    echo 'export PATH="$PATH:$GOBIN"' >> ~/.bashrc \
 ;fi
 
-USER root
+###########################################################################
+# GDAl:
+###########################################################################
+
+ARG INSTALL_GDAL=true
+
+RUN if [ ${INSTALL_GDAL} = true ]; then \
+    apt-get install -y python3-gdal gdal-bin libgdal-dev && \
+    pip install pygdal==$(gdal-config --version).* \
+;fi
+
+###########################################################################
+# NGROX:
+###########################################################################
+
+ARG INSTALL_NGROX=true
+
+RUN if [ ${INSTALL_NGROX} = true ]; then \
+    curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null && \
+    echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list && \
+    apt-get update -y && apt-get install -y ngrok \
+;fi
+
+###########################################################################
+# Deployer:
+###########################################################################
+
+ARG INSTALL_DEPLOYER=true
+
+RUN if [ ${INSTALL_DEPLOYER} = true ]; then \
+    # Install the Deployer
+    # Using Phar as currently there is no support for laravel 4 from composer version
+    # Waiting to be resolved on https://github.com/deployphp/deployer/issues/1552
+    curl -LO https://deployer.org/deployer.phar && \
+    mv deployer.phar /usr/local/bin/dep && \
+    chmod +x /usr/local/bin/dep \
+;fi
+
+###########################################################################
+# Dusk Dependencies:
+###########################################################################
+
+ARG INSTALL_DUSK_DEPS=true
+ARG CHROME_DRIVER_VERSION=stable
+ENV CHROME_DRIVER_VERSION ${CHROME_DRIVER_VERSION}
+
+RUN if [ ${INSTALL_DUSK_DEPS} = true ]; then \
+  apt-get -y install zip wget unzip xdg-utils \
+    libxpm4 libxrender1 libgtk2.0-0 libnss3 libgconf-2-4 xvfb \
+    gtk2-engines-pixbuf xfonts-cyrillic xfonts-100dpi xfonts-75dpi \
+    xfonts-base xfonts-scalable x11-apps \
+    fonts-ipafont \
+  && wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+  && dpkg -i --force-depends google-chrome-stable_current_amd64.deb \
+  && apt-get -y -f install \
+  && dpkg -i --force-depends google-chrome-stable_current_amd64.deb \
+  && rm google-chrome-stable_current_amd64.deb \
+  && wget https://chromedriver.storage.googleapis.com/${CHROME_DRIVER_VERSION}/chromedriver_linux64.zip \
+  && unzip chromedriver_linux64.zip \
+  && mv chromedriver /usr/local/bin/ \
+  && rm chromedriver_linux64.zip \
+;fi
 
 ###########################################################################
 # Node / NVM:
@@ -217,7 +487,7 @@ USER root
 USER ${USERNAME}
 
 # Check if NVM needs to be installed
-ARG NVM_VERSION="$(lastversion nvm-sh/nvm)"
+ARG NVM_VERSION="$(curl -s \"https://api.github.com/repos/nvm-sh/nvm/releases/latest\" | grep -Po '\"tag_name\": \"v\K[^\"]*')"
 ARG NODE_VERSION=lts/*
 ENV NODE_VERSION ${NODE_VERSION}
 ARG INSTALL_NODE=true
@@ -237,8 +507,8 @@ ARG NPM_FETCH_RETRY_MAXTIMEOUT=60000
 ENV NPM_FETCH_RETRY_MAXTIMEOUT ${NPM_FETCH_RETRY_MAXTIMEOUT}
 ENV NVM_DIR /home/${USERNAME}/.nvm
 
-COPY --chown=${USERNAME}:${USERNAME} ./versions/node.txt /tmp/node.txt
-COPY --chown=${USERNAME}:${USERNAME} ./node_packages.txt /tmp/node_packages.txt
+COPY --chown=${USERNAME}:${USERNAME} ./node/versions.txt /tmp/node_versions.txt
+COPY --chown=${USERNAME}:${USERNAME} ./node/packages.txt /tmp/node_packages.txt
 
 RUN if [ ${INSTALL_NODE} = true ]; then \
     # Install nvm (A Node Version Manager)
@@ -246,8 +516,8 @@ RUN if [ ${INSTALL_NODE} = true ]; then \
     NVM_VERSION=$(eval echo $NVM_VERSION) && \
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v${NVM_VERSION}/install.sh | bash \
         && . $NVM_DIR/nvm.sh \
-        && echo "\n$NODE_VERSION" >> /tmp/node.txt \
-        && for ver in $(cat /tmp/node.txt); do \
+        && echo "\n$NODE_VERSION" >> /tmp/node_versions.txt \
+        && for ver in $(cat /tmp/node_versions.txt); do \
           nvm install $ver; \
         done \
         && nvm use ${NODE_VERSION} \
@@ -279,51 +549,73 @@ RUN if [ ${INSTALL_NODE} = true ]; then \
 ;fi
 
 # Mount .npmrc into home folder
-COPY ./.npmrc /root/.npmrc
-COPY ./.npmrc /home/${USERNAME}/.npmrc
+COPY ./node/.npmrc /root/.npmrc
+COPY --chown=${USERNAME}:${USERNAME} ./node/.npmrc /home/${USERNAME}/.npmrc
+
+###########################################################################
+# Git:
+###########################################################################
+
+RUN git config --global credential.helper cache
+
+###########################################################################
+# NeoVIM:
+###########################################################################
+
+ARG INSTALL_NEOVIM=true
+ARG NEOVIM_VERSION="$(lastversion neovim/neovim)"
+ARG NEOVIM_CONFIG="https://github.com/NvChad/NvChad"
+
+RUN if [ ${INSTALL_NEOVIM} = true ]; then \
+    NEOVIM_VERSION=$(eval echo $NEOVIM_VERSION) && \
+    curl -Lo /tmp/nvim-linux64.tar.gz "https://github.com/neovim/neovim/releases/download/v${NEOVIM_VERSION}/nvim-linux64.tar.gz" && \
+    tar xzvf /tmp/nvim-linux64.tar.gz -C /tmp && \
+    mv /tmp/nvim-linux64 /opt/nvim && \
+    ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim && \
+    apt-get install -y ripgrep && \
+    runuser -l ${USERNAME} -c "git clone ${NEOVIM_CONFIG} ~/.config/nvim --depth 1" \
+;fi
 
 ###########################################################################
 # PHP:
 ###########################################################################
 
 ARG INSTALL_PHP=true
+ARG PHP_VERSION=8.1
+
+COPY ./php/versions.txt /tmp/php_versions
 
 RUN if [ ${INSTALL_PHP} = true ]; then \
   add-apt-repository -y ppa:ondrej/php && \
   apt-get update -yqq && \
-  apt-get install -y \
-    php8.1-cli php8.1-dev \
-    php8.1-pgsql php8.1-sqlite3 php8.1-gd php8.1-imagick \
-    php8.1-curl \
-    php8.1-imap php8.1-mysql php8.1-mbstring \
-    php8.1-xml php8.1-zip php8.1-bcmath php8.1-soap \
-    php8.1-intl php8.1-readline \
-    php8.1-ldap \
-    php8.1-msgpack php8.1-igbinary php8.1-redis php8.1-swoole \
-    php8.1-memcached php8.1-pcov php8.1-xdebug \
+  for ver in $(cat /tmp/php_versions); do \
+    apt-get install -y --allow-change-held-packages \
+    php${ver} php${ver}-bcmath php${ver}-bz2 php${ver}-cgi php${ver}-cli php${ver}-common php${ver}-curl php${ver}-dba php${ver}-dev \
+    php${ver}-enchant php${ver}-fpm php${ver}-gd php${ver}-gmp php${ver}-imap php${ver}-interbase php${ver}-intl php${ver}-ldap \
+    php${ver}-mbstring php${ver}-mysql php${ver}-odbc php${ver}-opcache php${ver}-pgsql php${ver}-phpdbg php${ver}-pspell php${ver}-readline \
+    php${ver}-snmp php${ver}-soap php${ver}-sqlite3 php${ver}-sybase php${ver}-tidy php${ver}-xdebug php${ver}-xml php${ver}-xmlrpc php${ver}-xsl \
+    php${ver}-zip php${ver}-imagick php${ver}-memcached php${ver}-redis \
+  ;done \
 ;fi
 
 ###########################################################################
 # Composer:
 ###########################################################################
 
-USER root
+ARG INSTALL_COMPOSER=true
 
-# Install composer and add its bin to the PATH.
-RUN curl -s http://getcomposer.org/installer | php \
-    && echo "export PATH=${PATH}:/var/www/vendor/bin" >> ~/.bashrc \
-    && mv composer.phar /usr/local/bin/composer
+RUN if [ ${INSTALL_COMPOSER} = true ] && [ ${INSTALL_PHP} = true ]; then \
+    curl -sLS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer && \
+    composer global require "laravel/envoy=^2.0" && \
+    composer global require "laravel/installer=^4.2" && \
+    composer global config --no-plugins allow-plugins.slince/composer-registry-manager true && \
+    composer global require "slince/composer-registry-manager=^2.0" \
+;fi
 
-# Add the composer.json
-COPY ./composer.json /home/${USERNAME}/.composer/composer.json
+# Make sure that ~/.composer belongs to USERNAME
+RUN mkdir -p /home/${USERNAME}/.composer && \
+    chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.composer
 
-# Add the auth.json for magento 2 credentials
-COPY ./auth.json /home/${USERNAME}/.composer/auth.json
-
-# Make sure that ~/.composer belongs to Ubuntu
-RUN chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.composer
-
-# Export composer vendor path
 RUN echo "" >> ~/.bashrc && \
     echo 'export PATH="$HOME/.composer/vendor/bin:$PATH"' >> ~/.bashrc
 
@@ -339,6 +631,9 @@ RUN set -eux; \
 
 USER ${USERNAME}
 
+# Add the composer.json
+COPY ./php/composer.json /home/${USERNAME}/.composer/composer.json
+
 # Check if global install need to be ran
 ARG COMPOSER_GLOBAL_INSTALL=false
 ENV COMPOSER_GLOBAL_INSTALL ${COMPOSER_GLOBAL_INSTALL}
@@ -352,9 +647,10 @@ RUN if [ ${COMPOSER_GLOBAL_INSTALL} = true ]; then \
 ARG COMPOSER_AUTH_JSON=false
 ENV COMPOSER_AUTH_JSON ${COMPOSER_AUTH_JSON}
 
-RUN if [ ${COMPOSER_AUTH_JSON} = false ]; then \
+COPY ./php/auth.json /tmp/auth.json
+RUN if [ ${COMPOSER_AUTH_JSON} = true ]; then \
     # remove the file
-    rm /home/${USERNAME}/.composer/auth.json \
+    cp /tmp/auth.json /home/${USERNAME}/.composer/auth.json \
 ;fi
 
 ARG COMPOSER_REPO_PACKAGIST
@@ -370,22 +666,7 @@ RUN echo "" >> ~/.bashrc && \
 
 USER root
 
-###########################################################################
-# NeoVIM:
-###########################################################################
-ARG INSTALL_NEOVIM=true
-ARG NEOVIM_VERSION="$(lastversion neovim/neovim)"
-ARG NEOVIM_CONFIG="https://github.com/NvChad/NvChad"
 
-RUN if [ ${INSTALL_NEOVIM} = true ]; then \
-    NEOVIM_VERSION=$(eval echo $NEOVIM_VERSION) && \
-    curl -Lo /tmp/nvim-linux64.tar.gz "https://github.com/neovim/neovim/releases/download/v${NEOVIM_VERSION}/nvim-linux64.tar.gz" && \
-    tar xzvf /tmp/nvim-linux64.tar.gz -C /tmp && \
-    mv /tmp/nvim-linux64 /opt/nvim && \
-    ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim && \
-    apt-get install -y ripgrep && \
-    runuser -l ${USERNAME} -c "git clone ${NEOVIM_CONFIG} ~/.config/nvim --depth 1" \
-;fi
 
 #
 #--------------------------------------------------------------------------
@@ -393,20 +674,20 @@ RUN if [ ${INSTALL_NEOVIM} = true ]; then \
 #--------------------------------------------------------------------------
 #
 
-USER root
+
+
 
 WORKDIR /home/${USERNAME}
 
-# Clean up
-RUN apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-    rm /var/log/lastlog /var/log/faillog
+## Clean up
+#RUN apt-get clean && \
+#    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+#    rm /var/log/lastlog /var/log/faillog
+#
+## Update Package List
+#RUN apt-get update -y
 
-# Update Package List
-RUN apt-get update -y
-
-COPY start-container /usr/local/bin/start-container
-RUN chmod +x /usr/local/bin/start-container
-
-ENTRYPOINT ["start-container"]
-
+## Avoid container exit.
+#CMD ["tail", "-f", "/dev/null"]
+#ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c",  "/etc/supervisord.conf"]
+#ENTRYPOINT /etc/init.d/cron start; supervisord -c "/etc/supervisord/unified-supervisord.conf"

@@ -1,0 +1,9 @@
+lastversion # https://github.com/dvershinin/lastversion
+virtualenv # https://github.com/pypa/virtualenv
+poetry # https://github.com/python-poetry/poetry
+ipython # https://github.com/ipython/ipython
+invoke # https://github.com/pyinvoke/invoke
+numpy # https://github.com/numpy/numpy
+geopandas # https://github.com/geopandas/geopandas
+django # https://github.com/django/django
+cookiecutter # https://github.com/cookiecutter/cookiecutter-django
