@@ -22,10 +22,6 @@ ARG USERNAME="ubuntu"
 # Start as root
 USER root
 
-###########################################################################
-# Update sýtem
-###########################################################################
-
 # Update Package List
 RUN apt-get update -y
 
@@ -49,10 +45,10 @@ RUN add-apt-repository -y ppa:ubuntugis/ppa && \
 # Install Some Basic Packages
 RUN apt-get install -y \
         apt-utils make cmake dos2unix gcc gettext geoip-bin locales \
-        curl wget telnet net-tools iputils-ping tmux rsync tree \
+        curl wget telnet net-tools iputils-ping tmux \
         git nano vim \
-        duf htop ncdu ack-grep exa \
         zip unzip libzip-dev
+        # duf htop ncdu exa rsync tree
 
 ###########################################################################
 # Set Locales
@@ -195,10 +191,11 @@ RUN if [ ${INSTALL_LAZYGIT} = true ]; then \
 USER root
 
 ARG SHELL_OH_MY_ZSH=true
-ARG SHELL_OH_MY_ZSH_AUTOCOMPLETE=true
-ARG SHELL_OH_MY_ZSH_AUTOSUGGESTIONS=false
-ARG SHELL_OH_MY_ZSH_SYNTAX_HIGHLIGHTING=true
 ARG SHELL_OH_MY_ZSH_SPACESHIP_PROMPT=true
+ARG SHELL_OH_MY_ZSH_SYNTAX_HIGHLIGHTING=true
+ARG SHELL_OH_MY_ZSH_AUTOCOMPLETE=false
+ARG SHELL_OH_MY_ZSH_AUTOSUGGESTIONS=true
+ARG SHELL_OH_MY_ZSH_COMPLETIONS=true
 ARG SHELL_OH_MY_ZSH_ALIASES=true
 
 RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
@@ -211,18 +208,22 @@ RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --keep-zshrc" && \
     echo yes | bash -c "$(curl --fail --show-error --silent --location https://raw.githubusercontent.com/zdharma-continuum/zinit/HEAD/scripts/install.sh)" && \
     echo '\n# ZSH Plugins' >> ~/.zshrc && \
-#    if [ ${SHELL_OH_MY_ZSH_AUTOSUGGESTIONS} = true ]; then \
-#      echo "zinit light zsh-users/zsh-autosuggestions" >> ~/.zshrc \
-#    ;fi && \
-    if [ ${SHELL_OH_MY_ZSH_SYNTAX_HIGHLIGHTING} = true ]; then \
-      echo "zinit light zsh-users/zsh-syntax-highlighting" >> ~/.zshrc \
-    ;fi && \
     if [ ${SHELL_OH_MY_ZSH_SPACESHIP_PROMPT} = true ]; then \
       echo "zinit light spaceship-prompt/spaceship-prompt" >> ~/.zshrc \
+    ;fi && \
+    if [ ${SHELL_OH_MY_ZSH_SYNTAX_HIGHLIGHTING} = true ]; then \
+      echo "zinit light zsh-users/zsh-syntax-highlighting" >> ~/.zshrc \
     ;fi && \
     if [ ${SHELL_OH_MY_ZSH_AUTOCOMPLETE} = true ]; then \
       echo "zinit light marlonrichert/zsh-autocomplete" >> ~/.zshrc \
     ;fi && \
+    if [ ${SHELL_OH_MY_ZSH_AUTOSUGGESTIONS} = true ]; then \
+        echo "zinit light zsh-users/zsh-autosuggestions" >> ~/.zshrc \
+    ;fi && \
+    if [ ${SHELL_OH_MY_ZSH_COMPLETIONS} = true ]; then \
+        echo "zinit light zsh-users/zsh-completions" >> ~/.zshrc \
+    ;fi && \
+
     echo '\n# ZSH Snippet' >> ~/.zshrc && \
     if [ ${SHELL_OH_MY_ZSH_ALIASES} = true ]; then \
       echo "zinit snippet https://raw.githubusercontent.com/laragis/zsh-snippets/main/bash_aliases.sh" >> ~/.zshrc \
@@ -435,8 +436,8 @@ RUN if [ ${INSTALL_GDAL} = true ]; then \
 ARG INSTALL_NGROX=true
 
 RUN if [ ${INSTALL_NGROX} = true ]; then \
-    curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null && \
-    echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list && \
+    curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null && \
+    echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | tee /etc/apt/sources.list.d/ngrok.list && \
     apt-get update -y && apt-get install -y ngrok \
 ;fi
 
@@ -459,7 +460,7 @@ RUN if [ ${INSTALL_DEPLOYER} = true ]; then \
 # Dusk Dependencies:
 ###########################################################################
 
-ARG INSTALL_DUSK_DEPS=true
+ARG INSTALL_DUSK_DEPS=false
 ARG CHROME_DRIVER_VERSION=stable
 ENV CHROME_DRIVER_VERSION ${CHROME_DRIVER_VERSION}
 
@@ -491,10 +492,6 @@ ARG NVM_VERSION="$(curl -s \"https://api.github.com/repos/nvm-sh/nvm/releases/la
 ARG NODE_VERSION=lts/*
 ENV NODE_VERSION ${NODE_VERSION}
 ARG INSTALL_NODE=true
-ARG INSTALL_NPM_GULP=true
-ARG INSTALL_NPM_BOWER=false
-ARG INSTALL_NPM_VUE_CLI=false
-ARG INSTALL_NPM_ANGULAR_CLI=false
 ARG NPM_REGISTRY
 ENV NPM_REGISTRY ${NPM_REGISTRY}
 ARG NPM_FETCH_RETRIES=2
@@ -666,7 +663,42 @@ RUN echo "" >> ~/.bashrc && \
 
 USER root
 
+# ###########################################################################
+# # HTTPie:
+# ###########################################################################
 
+# ARG INSTALL_HTTPIE=true
+
+# RUN if [ ${INSTALL_HTTPIE} = true ]; then \
+#     curl -SsL https://packages.httpie.io/deb/KEY.gpg | apt-key add - && \
+#     curl -SsL -o /etc/apt/sources.list.d/httpie.list https://packages.httpie.io/deb/httpie.list && \
+#     apt-get update -y && apt-get install -y httpie \
+# ;fi
+
+###########################################################################
+# gping:
+###########################################################################
+
+ARG INSTALL_GPING=true
+
+RUN if [ ${INSTALL_GPING} = true ]; then \
+    echo "deb http://packages.azlux.fr/debian/ buster main" | tee /etc/apt/sources.list.d/azlux.list && \
+    wget -qO - https://azlux.fr/repo.gpg.key | apt-key add - && \
+    apt-get update -y && apt-get install -y gping \
+;fi
+
+# RUN pip install tldr
+# RUN apt-get install -y nnn zoxide ripgrep duf htop ncdu exa rsync jq
+# RUN cargo install sd choose
+
+# https://dystroy.org/broot/download/x86_64-linux/broot
+# https://github.com/dalance/procs/releases/download/v0.14.0/procs-v0.14.0-x86_64-linux.zip
+# cargo install broot procs
+
+
+# https://github.com/theryangeary/choose
+# https://github.com/cantino/mcfly
+# https://github.com/nicolargo/glances
 
 #
 #--------------------------------------------------------------------------

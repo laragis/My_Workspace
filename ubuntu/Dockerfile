@@ -31,8 +31,8 @@ RUN apt-get install -y \
         apt-utils make cmake dos2unix gcc gettext geoip-bin \
         curl wget telnet net-tools iputils-ping tmux \
         git nano vim \
-        duf htop ncdu ack-grep exa \
-        zip unzip libzip-dev
+        zip unzip libzip-dev \
+        duf htop ncdu exa
 
 
 ###########################################################################

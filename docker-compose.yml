@@ -12,6 +12,7 @@ services:
   ### Workspace Utilities ##################################
   workspace:
     image: ttungbmt/workspace
+    container_name: workspace
     build:
       context: ./workspace
     restart: unless-stopped
@@ -25,16 +26,15 @@ services:
       - GIT_USERNAME=${GIT_USERNAME}
       - GIT_EMAIL=${GIT_EMAIL}
       - NODE_OPTIONS=--openssl-legacy-provider
-#    volumes:
-#      - userprofile:/home/ubuntu
-#      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+    volumes:
+    #  - userprofile:/home/ubuntu
+      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
     ports:
-#      - "${WORKSPACE_SSH_PORT}:22"
-#      - "${WORKSPACE_SUPERVISOR_PORT}:9001"
+      - "${WORKSPACE_SSH_PORT}:22"
+      - "${WORKSPACE_SUPERVISOR_PORT}:9001"
       - 8080
       - 8000
       - 3000
-      - 2200:22
     networks:
       - shared-proxy
       - default

@@ -230,3 +230,22 @@ unzip '*.zip'
 unzip \*.zip
 for z in *.zip; do unzip "$z"; done
 ```
+
+```shell
+docker run --rm -it \
+    --name gtop \
+    --net="host" \
+    --pid="host" \
+    aksakalli/gtop
+```
+
+- https://jvns.ca/blog/2022/04/12/a-list-of-new-ish--command-line-tools/
+- https://mosh.org/
+- https://github.com/aristocratos/btop, https://github.com/aksakalli/gtop, 
+- https://github.com/mgunyho/tere
+- https://github.com/dylanaraps/neofetch
+
+ZSH
+- https://github.com/zsh-users/zsh-history-substring-search
+- https://github.com/MichaelAquilina/zsh-you-should-use
+- https://github.com/MichaelAquilina/zsh-auto-notify
