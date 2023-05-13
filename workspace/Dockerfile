@@ -104,13 +104,65 @@ RUN apt-get install -y fontconfig
 
 USER ${USERNAME}
 
+ARG NERDFONTS_VERSION="$(curl -s \"https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest\" | grep -Po '\"tag_name\": \"v\K[^\"]*')"
+
 RUN mkdir -p /home/${USERNAME}/.local/share/fonts && \
+    ver=$(eval echo $NERDFONTS_VERSION) && \
+    cd /home/${USERNAME}/.local/share/fonts && \
     for font in $(cat /tmp/fonts.txt); do \
-      wget -P /home/${USERNAME}/.local/share/fonts $font; \
-    done && \
+      wget "https://github.com/ryanoasis/nerd-fonts/releases/download/v${ver}/${font}.zip" &&\
+      unzip ${font}.zip -d ./${font} &&  \
+      mv ./${font}/*.ttf ./ && \
+      rm -rf ${font}.zip ./${font} \
+    ;done && \
     fc-cache -fv
 
 USER root
+
+###########################################################################
+# PYTHON3:
+###########################################################################
+
+ARG INSTALL_PYTHON3=true
+
+COPY ./python/requirements.txt /tmp/requirements.txt
+
+RUN if [ ${INSTALL_PYTHON3} = true ]; then \
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    apt-get update -yqq && \
+    apt-get -y install \
+      python-is-python3 \
+      python3-dev python3-pip \
+      python3-psycopg2 python3-ldap \
+      python3-pil python3-lxml python3-pylibmc && \
+      pip install -r ./tmp/requirements.txt \
+;fi
+
+
+###########################################################################
+# Rust:
+###########################################################################
+
+ARG INSTALL_CARGO=true
+
+RUN if [ ${INSTALL_CARGO} = true ]; then \
+    apt-get install -y cargo && \
+    echo 'export PATH="/home/'${USERNAME}'/.cargo/bin:$PATH"' >> /home/${USERNAME}/.bashrc \
+;fi
+
+###########################################################################
+# Go:
+###########################################################################
+
+ARG INSTALL_GO=false
+ENV GOPATH="/home/${USERNAME}/go"
+
+RUN if [ ${INSTALL_GO} = true ]; then \
+    apt-get install -y golang-go && \
+    echo "export GOPATH=\"$GOPATH\"" >> ~/.bashrc && \
+    echo 'export GOBIN="$GOPATH/bin"' >> ~/.bashrc && \
+    echo 'export PATH="$PATH:$GOBIN"' >> ~/.bashrc \
+;fi
 
 ###########################################################################
 # bat:
@@ -132,6 +184,30 @@ ARG INSTALL_FD=true
 RUN if [ ${INSTALL_FD} = true ]; then \
     apt-get install -y fd-find && \
     ln -s $(which fdfind) /usr/local/bin/fd \
+;fi
+
+###########################################################################
+# HTTPie:
+###########################################################################
+
+ARG INSTALL_HTTPIE=true
+
+RUN if [ ${INSTALL_HTTPIE} = true ]; then \
+#     curl -SsL https://packages.httpie.io/deb/KEY.gpg | apt-key add - && \
+#     curl -SsL -o /etc/apt/sources.list.d/httpie.list https://packages.httpie.io/deb/httpie.list && \
+    apt-get update -y && apt-get install -y httpie \
+;fi
+
+###########################################################################
+# gping:
+###########################################################################
+
+ARG INSTALL_GPING=true
+
+RUN if [ ${INSTALL_GPING} = true ]; then \
+    echo "deb http://packages.azlux.fr/debian/ buster main" | tee /etc/apt/sources.list.d/azlux.list && \
+    wget -qO - https://azlux.fr/repo.gpg.key | apt-key add - && \
+    apt-get update -y && apt-get install -y gping \
 ;fi
 
 ###########################################################################
@@ -223,10 +299,11 @@ RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
     if [ ${SHELL_OH_MY_ZSH_COMPLETIONS} = true ]; then \
         echo "zinit light zsh-users/zsh-completions" >> ~/.zshrc \
     ;fi && \
-
+    echo "zinit light MichaelAquilina/zsh-you-should-use" >> ~/.zshrc && \
     echo '\n# ZSH Snippet' >> ~/.zshrc && \
     if [ ${SHELL_OH_MY_ZSH_ALIASES} = true ]; then \
       echo "zinit snippet https://raw.githubusercontent.com/laragis/zsh-snippets/main/bash_aliases.sh" >> ~/.zshrc \
+      echo "zinit snippet https://raw.githubusercontent.com/jarun/nnn/master/misc/quitcd/quitcd.bash_sh_zsh" >> ~/.zshrc \
     ;fi \
 ;fi
 
@@ -376,49 +453,6 @@ RUN if [ ${INSTALL_ANSIBLE} = true ]; then \
 ;fi
 
 ###########################################################################
-# PYTHON3:
-###########################################################################
-
-ARG INSTALL_PYTHON3=true
-
-COPY ./python/requirements.txt /tmp/requirements.txt
-
-RUN if [ ${INSTALL_PYTHON3} = true ]; then \
-    add-apt-repository -y ppa:deadsnakes/ppa && \
-    apt-get update -yqq && \
-    apt-get -y install \
-      python-is-python3 \
-      python3-dev python3-pip \
-      python3-psycopg2 python3-ldap \
-      python3-pil python3-lxml python3-pylibmc && \
-      pip install -r ./tmp/requirements.txt \
-;fi
-
-###########################################################################
-# Rust:
-###########################################################################
-
-ARG INSTALL_CARGO=true
-
-RUN if [ ${INSTALL_FD} = true ]; then \
-    apt-get install -y cargo \
-;fi
-
-###########################################################################
-# Go:
-###########################################################################
-
-ARG INSTALL_GO=true
-ENV GOPATH="/home/${USERNAME}/go"
-
-RUN if [ ${INSTALL_GO} = true ]; then \
-    apt-get install -y golang-go && \
-    echo "export GOPATH=\"$GOPATH\"" >> ~/.bashrc && \
-    echo 'export GOBIN="$GOPATH/bin"' >> ~/.bashrc && \
-    echo 'export PATH="$PATH:$GOBIN"' >> ~/.bashrc \
-;fi
-
-###########################################################################
 # GDAl:
 ###########################################################################
 
@@ -428,6 +462,7 @@ RUN if [ ${INSTALL_GDAL} = true ]; then \
     apt-get install -y python3-gdal gdal-bin libgdal-dev && \
     pip install pygdal==$(gdal-config --version).* \
 ;fi
+
 
 ###########################################################################
 # NGROX:
@@ -663,42 +698,32 @@ RUN echo "" >> ~/.bashrc && \
 
 USER root
 
-# ###########################################################################
-# # HTTPie:
-# ###########################################################################
-
-# ARG INSTALL_HTTPIE=true
-
-# RUN if [ ${INSTALL_HTTPIE} = true ]; then \
-#     curl -SsL https://packages.httpie.io/deb/KEY.gpg | apt-key add - && \
-#     curl -SsL -o /etc/apt/sources.list.d/httpie.list https://packages.httpie.io/deb/httpie.list && \
-#     apt-get update -y && apt-get install -y httpie \
-# ;fi
-
 ###########################################################################
-# gping:
+# Modern Command:
 ###########################################################################
 
-ARG INSTALL_GPING=true
+USER ${USERNAME}
 
-RUN if [ ${INSTALL_GPING} = true ]; then \
-    echo "deb http://packages.azlux.fr/debian/ buster main" | tee /etc/apt/sources.list.d/azlux.list && \
-    wget -qO - https://azlux.fr/repo.gpg.key | apt-key add - && \
-    apt-get update -y && apt-get install -y gping \
-;fi
+RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
 
-# RUN pip install tldr
-# RUN apt-get install -y nnn zoxide ripgrep duf htop ncdu exa rsync jq
-# RUN cargo install sd choose
+RUN curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash && \
+    echo 'eval "$(zoxide init zsh)"' >> ~/.zshrc
 
-# https://dystroy.org/broot/download/x86_64-linux/broot
-# https://github.com/dalance/procs/releases/download/v0.14.0/procs-v0.14.0-x86_64-linux.zip
-# cargo install broot procs
+USER root
 
+RUN pip install tldr
+RUN apt-get install -y ripgrep duf htop ncdu exa rsync jq fzf
+#RUN cargo install sd choose
 
-# https://github.com/theryangeary/choose
-# https://github.com/cantino/mcfly
-# https://github.com/nicolargo/glances
+RUN apt install -y libreadline-dev && \
+    git clone https://github.com/jarun/nnn.git /tmp/nnn && \
+    cd /tmp/nnn && make O_NERD=1 && \
+    mv /tmp/nnn /usr/bin/nnn && \
+    ln -s /usr/bin/nnn /usr/local/bin/nnn
+
+#RUN sh -c "$(curl -Ls https://raw.githubusercontent.com/jarun/nnn/master/plugins/getplugs)"
+
+RUN service docker start
 
 #
 #--------------------------------------------------------------------------
@@ -706,18 +731,18 @@ RUN if [ ${INSTALL_GPING} = true ]; then \
 #--------------------------------------------------------------------------
 #
 
-
+USER root
 
 
 WORKDIR /home/${USERNAME}
 
-## Clean up
-#RUN apt-get clean && \
-#    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-#    rm /var/log/lastlog /var/log/faillog
-#
-## Update Package List
-#RUN apt-get update -y
+# Clean up
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    rm /var/log/lastlog /var/log/faillog
+
+# Update Package List
+RUN apt-get update -y
 
 ## Avoid container exit.
 #CMD ["tail", "-f", "/dev/null"]

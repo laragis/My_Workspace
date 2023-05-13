@@ -249,3 +249,19 @@ ZSH
 - https://github.com/zsh-users/zsh-history-substring-search
 - https://github.com/MichaelAquilina/zsh-you-should-use
 - https://github.com/MichaelAquilina/zsh-auto-notify
+
+
+```shell
+# RUN pip install tldr
+# RUN apt-get install -y nnn zoxide ripgrep duf htop ncdu exa rsync jq
+# RUN cargo install sd choose
+# https://dystroy.org/broot/download/x86_64-linux/broot
+# https://github.com/dalance/procs/releases/download/v0.14.0/procs-v0.14.0-x86_64-linux.zip
+# cargo install broot procs
+
+
+# https://github.com/theryangeary/choose
+# https://github.com/cantino/mcfly
+# https://github.com/nicolargo/glances
+
+```
