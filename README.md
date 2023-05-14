@@ -36,7 +36,9 @@ ssh -p 2200 ubuntu@localhost
 sudo service supervisor start
 sudo service supervisor status
 sudo service supervisor restart
-sudo service supervisor reload
+sudo service --status-all
+
+pstree
 ```
 
 ## Cheatsheet
@@ -264,4 +266,49 @@ ZSH
 # https://github.com/cantino/mcfly
 # https://github.com/nicolargo/glances
 
+#CMD ["tail", "-f", "/dev/null"]
+#ENTRYPOINT /etc/init.d/cron start; supervisord -c "/etc/supervisord/unified-supervisord.conf"
+```
+```shell
+if [ ${INSTALL_CRON} = true ]; then \
+  cat /tmp/supervisord.d/cron.ini >> /etc/supervisord.d/cron.ini \
+;fi && \
+if [ ${INSTALL_SSH} = true ]; then \
+  cat /tmp/supervisord.d/ssh.ini >> /etc/supervisord.d/ssh.ini \
+;fi && \
+if [ ${INSTALL_DOCKER} = true ]; then \
+  cat /tmp/supervisord.d/docker.ini >> /etc/supervisord.d/docker.ini \
+;fi && \
+if [ ${INSTALL_TTYD} = true ]; then \
+  cat /tmp/supervisord.d/ttyd.ini >> /etc/supervisord.d/ttyd.ini \
+;fi \
+```
+
+
+- https://unix.stackexchange.com/questions/8656/usr-bin-vs-usr-local-bin-on-linux
+```shell
+/bin/ => system
+/usr/bin => distribution-managed normal user programs
+/usr/local/bin => not managed by the distribution package manager, e.g. locally compiled packages
+```
+
+Error not load enviroment variables
+```shell
+# 1
+RUN /root/.cargo/bin/cargo install sd
+
+# 2
+RUN bash -c 'source "$HOME/.cargo/env && cargo install sd'
+
+# 3
+RUN ln -s /root/.cargo/bin/cargo /usr/local/bin/cargo
+RUN cargo install sd
+
+# 3
+ENV PATH $PATH:/root/.cargo/bin
+RUN cargo install sd
+
+# 4
+SHELL ["/bin/bash", "-l", "-c"]
+RUN cargo install sd
 ```

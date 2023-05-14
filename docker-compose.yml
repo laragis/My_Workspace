@@ -15,7 +15,9 @@ services:
     container_name: workspace
     build:
       context: ./workspace
-    restart: unless-stopped
+      args:
+        - DISABLE_CRON=1
+#    restart: unless-stopped
     privileged: true
     working_dir: ${APP_CODE_PATH_CONTAINER}
     tty: true
@@ -35,6 +37,7 @@ services:
       - 8080
       - 8000
       - 3000
+      - 8022:8022
     networks:
       - shared-proxy
       - default
