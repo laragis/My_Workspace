@@ -221,31 +221,32 @@ RUN if [ ${INSTALL_LAZYGIT} = true ]; then \
 USER root
 
 ARG SHELL_OH_MY_ZSH=true
+ARG SHELL_OH_MY_ZSH_AUTOCOMPLETE=false
 ARG SHELL_OH_MY_ZSH_SPACESHIP_PROMPT=true
 ARG SHELL_OH_MY_ZSH_SYNTAX_HIGHLIGHTING=true
-ARG SHELL_OH_MY_ZSH_AUTOCOMPLETE=false
 ARG SHELL_OH_MY_ZSH_AUTOSUGGESTIONS=true
 ARG SHELL_OH_MY_ZSH_COMPLETIONS=true
 ARG SHELL_OH_MY_ZSH_ALIASES=true
+ARG ZSH_RELOAD=true
+
 
 RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
    apt install -y zsh \
 ;fi
 
-USER ${USERNAME}
-
 RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --keep-zshrc" && \
    echo yes | bash -c "$(curl --fail --show-error --silent --location https://raw.githubusercontent.com/zdharma-continuum/zinit/HEAD/scripts/install.sh)" && \
+   echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc && \
    echo '\n# ZSH Plugins' >> ~/.zshrc && \
+   if [ ${SHELL_OH_MY_ZSH_AUTOCOMPLETE} = true ]; then \
+     echo "zinit light marlonrichert/zsh-autocomplete" >> ~/.zshrc \
+   ;fi && \
    if [ ${SHELL_OH_MY_ZSH_SPACESHIP_PROMPT} = true ]; then \
      echo "zinit light spaceship-prompt/spaceship-prompt" >> ~/.zshrc \
    ;fi && \
    if [ ${SHELL_OH_MY_ZSH_SYNTAX_HIGHLIGHTING} = true ]; then \
      echo "zinit light zsh-users/zsh-syntax-highlighting" >> ~/.zshrc \
-   ;fi && \
-   if [ ${SHELL_OH_MY_ZSH_AUTOCOMPLETE} = true ]; then \
-     echo "zinit light marlonrichert/zsh-autocomplete" >> ~/.zshrc \
    ;fi && \
    if [ ${SHELL_OH_MY_ZSH_AUTOSUGGESTIONS} = true ]; then \
        echo "zinit light zsh-users/zsh-autosuggestions" >> ~/.zshrc \
@@ -259,8 +260,11 @@ RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
      echo "zinit snippet https://raw.githubusercontent.com/laragis/zsh-snippets/main/bash_aliases.sh" >> ~/.zshrc && \
      echo "zinit snippet https://raw.githubusercontent.com/jarun/nnn/master/misc/quitcd/quitcd.bash_sh_zsh" >> ~/.zshrc \
    ;fi && \
-   zsh -c "source ~/.zshrc" \
+   if [ ${ZSH_RELOAD} = true ]; then \
+      zsh -c "source ~/.zshrc" \
+   ;fi \
 ;fi
+
 
 USER root
 
@@ -275,7 +279,8 @@ RUN if [ ${INSTALL_DOCKER} = true ]; then \
    # Enable user to run docker commands
    usermod -aG docker ${USERNAME} && \
    # Activate the changes to groups
-   newgrp docker \
+   newgrp docker && \
+   cat /tmp/supervisord.d/docker.ini >> /etc/supervisord.d/docker.ini \
 ;fi
 
 ###########################################################################
@@ -289,7 +294,8 @@ COPY ./crontab /tmp/cron.d
 RUN if [ ${INSTALL_CRON} = true ]; then \
    apt-get install -y cron && \
    cp -rf /tmp/cron.d /etc/cron.d && \
-   chmod -R 644 /etc/cron.d \
+   chmod -R 644 /etc/cron.d && \
+   cat /tmp/supervisord.d/cron.ini >> /etc/supervisord.d/cron.ini \
 ;fi
 
 ###########################################################################
@@ -314,7 +320,8 @@ RUN set -eux; \
      apt-get install -y openssh-server && \
      mkdir -p /run/sshd && \
      sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
-     sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd \
+     sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd && \
+     cat /tmp/supervisord.d/ssh.ini >> /etc/supervisord.d/ssh.ini \
    ;fi; \
    ###########################################################################
    # sshpass:
@@ -613,6 +620,13 @@ USER root
 # --------------------------------------------------------------------------
 
 RUN apt-get install -y bat httpie ripgrep duf htop ncdu exa rsync jq fzf fd-find
+
+USER ${USERNAME}
+
+RUN curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash && \
+   echo 'eval "$(zoxide init zsh)"' >> ~/.zshrc
+
+USER root
 
 #
 #--------------------------------------------------------------------------

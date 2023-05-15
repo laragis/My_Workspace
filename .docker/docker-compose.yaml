@@ -1,6 +1,6 @@
 volumes:
   wsprofile:
-    driver: ${VOLUMES_DRIVER}
+    driver: local
 
 networks:
   default:
@@ -13,25 +13,22 @@ services:
   workspace:
     image: ttungbmt/workspace
     container_name: workspace
-    build:
-      context: ./workspace
     restart: unless-stopped
     privileged: true
     working_dir: ${APP_CODE_PATH_CONTAINER}
     tty: true
     environment:
-      - DOCKER_HOST=tcp://${DOCKER_HOST_IP}:${DOCKER_HOST_PORT}
+      - DOCKER_HOST=tcp://host.docker.internal:2375
       - DOCKER_TLS_VERIFY=
       - CHOKIDAR_USEPOLLING=true
-      - GIT_USERNAME=${GIT_USERNAME}
-      - GIT_EMAIL=${GIT_EMAIL}
       - NODE_OPTIONS=--openssl-legacy-provider
     volumes:
       - wsprofile:/home/ubuntu
-      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+      - ../WORKSPACE:/home/ubuntu/WORKSPACE:cached
     ports:
-      - "${WORKSPACE_SSH_PORT}:22"
-      - "${WORKSPACE_SUPERVISOR_PORT}:9001"
+      - "${WORKSPACE_SSH_PORT:-2200}:22"
+      - "${WORKSPACE_SUPERVISOR_PORT:-9001}:9001"
+      - 8000
       - 8080
       - 3000
     networks:
