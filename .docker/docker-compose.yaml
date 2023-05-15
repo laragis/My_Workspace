@@ -15,7 +15,7 @@ services:
     container_name: workspace
     restart: unless-stopped
     privileged: true
-    working_dir: ${APP_CODE_PATH_CONTAINER}
+    working_dir: /home/ubuntu/WORKSPACE
     tty: true
     environment:
       - DOCKER_HOST=tcp://host.docker.internal:2375
@@ -23,14 +23,14 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - NODE_OPTIONS=--openssl-legacy-provider
     volumes:
-      - wsprofile:/home/ubuntu
+      # - wsprofile:/home/ubuntu
       - ../WORKSPACE:/home/ubuntu/WORKSPACE:cached
     ports:
-      - "${WORKSPACE_SSH_PORT:-2200}:22"
-      - "${WORKSPACE_SUPERVISOR_PORT:-9001}:9001"
-      - 8000
-      - 8080
-      - 3000
+      - "2200:22"
+      - "9001:9001"
+      - "8000"
+      - "8080"
+      - "3000"
     networks:
       - shared-proxy
       - default

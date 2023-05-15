@@ -231,13 +231,11 @@ ARG ZSH_RELOAD=true
 
 
 RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
-   apt-get install -y zsh \   
+   apt install -y zsh \
 ;fi
 
-USER ${USERNAME}
-
 RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
-   sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --keep-zshrc" && \
+   curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh | sh -s -- -y && \
    echo yes | bash -c "$(curl --fail --show-error --silent --location https://raw.githubusercontent.com/zdharma-continuum/zinit/HEAD/scripts/install.sh)" && \
    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc && \
    echo '\n# ZSH Plugins' >> ~/.zshrc && \
@@ -623,11 +621,11 @@ USER root
 
 RUN apt-get install -y bat httpie ripgrep duf htop ncdu exa rsync jq fzf fd-find
 
-RUN apt-get install -y pkg-config libncursesw5-dev libreadline-dev && \
+RUN apt-get install -y libreadline-dev && \
    git clone --depth 1 https://github.com/jarun/nnn.git /tmp/nnn && \
    cd /tmp/nnn && make O_NERD=1 && \
    mv /tmp/nnn /usr/bin/nnn && \
-   ln -s /usr/bin/nnn/nnn /usr/local/bin/nnn
+   ln -s /usr/bin/nnn /usr/local/bin/nnn
 
 USER ${USERNAME}
 
@@ -647,15 +645,15 @@ USER root
 COPY ./my_init.d /etc/my_init.d
 RUN chmod -R +x /etc/my_init.d
 
-# Update Package List
-RUN apt-get update -y
+WORKDIR /home/${USERNAME}
 
 # Clean up
 RUN apt-get clean && \
    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
    rm /var/log/lastlog /var/log/faillog
 
-WORKDIR /home/${USERNAME}
+# Update Package List
+RUN apt-get update -y
 
 # Avoid container exit.
 CMD /sbin/my_init --skip-runit --enable-insecure-key -- /usr/bin/supervisord -n -c /etc/supervisord.conf
