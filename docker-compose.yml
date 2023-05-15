@@ -1,5 +1,5 @@
 volumes:
-  userprofile:
+  wsprofile:
     driver: ${VOLUMES_DRIVER}
 
 networks:
@@ -29,18 +29,19 @@ services:
       - GIT_EMAIL=${GIT_EMAIL}
       - NODE_OPTIONS=--openssl-legacy-provider
     volumes:
-    #  - userprofile:/home/ubuntu
+      - wsprofile:/home/ubuntu
       - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
     ports:
       - "${WORKSPACE_SSH_PORT}:22"
       - "${WORKSPACE_SUPERVISOR_PORT}:9001"
-      - 8080
-      - 8000
-      - 3000
-      - 8022:8022
+      # - 8080
+      # - 8000
+      # - 3000
+      # - 8022:8022
     networks:
       - shared-proxy
       - default
+
 
   ### Traefik ##############################################
   reverse-proxy:

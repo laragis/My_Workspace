@@ -312,3 +312,86 @@ RUN cargo install sd
 SHELL ["/bin/bash", "-l", "-c"]
 RUN cargo install sd
 ```
+
+```shell
+# ###########################################################################
+# # Rust:
+# ###########################################################################
+
+# ARG INSTALL_CARGO=true
+# ENV RUSTUP_HOME=/usr/local/rustup
+# ENV CARGO_HOME=/usr/local/cargo
+
+# RUN if [ ${INSTALL_CARGO} = true ]; then \
+#    curl https://sh.rustup.rs -sSf | sh -s -- -y \
+# ;fi
+
+# USER ${USERNAME}
+
+# RUN if [ ${INSTALL_CARGO} = true ]; then \
+#    mkdir -p ~/.cargo ~/.rustup && \
+#    echo 'export PATH=/usr/local/cargo/bin:$PATH' >> ~/.bashrc \
+#    echo 'export CARGO_HOME=~/.cargo' >> ~/.bashrc \
+# ;fi
+
+# USER root
+
+# ###########################################################################
+# # Go:
+# ###########################################################################
+
+# ARG INSTALL_GO=true
+# ARG GO_VERSION="$(lastversion golang/go)"
+
+# RUN if [ ${INSTALL_GO} = true ]; then \
+#    ver=$(eval echo $GO_VERSION) && \
+#    cd /tmp && wget https://golang.org/dl/go${ver}.linux-amd64.tar.gz && \
+#    tar -xzf go${ver}.linux-amd64.tar.gz -C /usr/local && \
+#    echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc \
+# ;fi
+
+# --------------------------------------------------------------------------
+# Modern basic packages
+# --------------------------------------------------------------------------
+
+RUN apt-get install -y bat httpie ripgrep duf htop ncdu exa rsync jq fzf fd-find
+
+# RUN cargo install sd choose
+
+# RUN bash -c 'source "$HOME/.cargo/env" && cargo install sd'
+# RUN bash -c 'source /root/.bashrc && cargo install sd'
+# RUN ln -s /root/.cargo/bin/cargo /usr/local/bin/cargo
+# RUN cargo install sd
+
+# RUN echo "cargo install sd" >> /tmp/temp1.sh && \
+#    chmod +x /tmp/temp1.sh && \
+#    bash -c /tmp/temp1.sh
+
+
+# RUN ln -s $(which batcat) /usr/local/bin/bat && \
+#    ln -s $(which fdfind) /usr/local/bin/fd
+
+# ###########################################################################
+# # Modern Command:
+# ###########################################################################
+
+# USER ${USERNAME}
+
+# RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+
+# RUN curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash && \
+#    echo 'eval "$(zoxide init zsh)"' >> ~/.zshrc
+
+# USER root
+
+# RUN pip install tldr
+# RUN apt-get install -y ripgrep duf htop ncdu exa rsync jq fzf
+
+# RUN apt install -y libreadline-dev && \
+#    git clone https://github.com/jarun/nnn.git /tmp/nnn && \
+#    cd /tmp/nnn && make O_NERD=1 && \
+#    mv /tmp/nnn /usr/bin/nnn && \
+#    ln -s /usr/bin/nnn /usr/local/bin/nnn
+
+# #RUN sh -c "$(curl -Ls https://raw.githubusercontent.com/jarun/nnn/master/plugins/getplugs)"
+```
