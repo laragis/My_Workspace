@@ -395,3 +395,20 @@ RUN apt-get install -y bat httpie ripgrep duf htop ncdu exa rsync jq fzf fd-find
 
 # #RUN sh -c "$(curl -Ls https://raw.githubusercontent.com/jarun/nnn/master/plugins/getplugs)"
 ```
+
+https://bash-it.readthedocs.io/en/latest/
+https://github.com/labbots/bash-utility
+
+jq yq
+
+https://github.com/nvbn/thefuck
+
+
+https://github.com/ayoisaiah/f2
+https://github.com/peco/peco
+https://github.com/nschloe/deadlink
+
+https://github.com/cantino/mcfly
+https://github.com/nicolargo/glances
+https://github.com/dalance/procs
+https://github.com/cheat/cheat

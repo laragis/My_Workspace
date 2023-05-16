@@ -659,4 +659,3 @@ WORKDIR /home/${USERNAME}
 
 # Avoid container exit.
 CMD /sbin/my_init --skip-runit --enable-insecure-key -- /usr/bin/supervisord -n -c /etc/supervisord.conf
-
